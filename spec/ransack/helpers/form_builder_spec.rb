@@ -155,6 +155,26 @@ module Ransack
           html.should match /id=\"q_notable_type_eq\"/
         end
       end
+
+      describe '#condition_fields' do
+        it 'returns previously-entered values' do
+          @s.name_eq = "foo"
+          html = ''
+          @f.condition_fields do |c|
+            c.attribute_fields {|a| html = a.attribute_select}
+          end
+          html.should match(/<option selected=\"selected\" value=\"name\"/)
+        end
+
+        it 'filters attributes in :except' do
+          @s.name_eq = "foo"
+          html = ''
+          @f.condition_fields :except => ['name'] do |c|
+            c.attribute_fields { |a| html = a.attribute_select }
+          end
+          html.should_not match(/<option selected=\"selected\" value=\"name\"/)
+        end
+      end
     end
   end
 end

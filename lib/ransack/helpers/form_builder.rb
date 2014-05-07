@@ -1,5 +1,5 @@
 require 'action_view'
-
+require 'pry'
 require 'simple_form' if
   (ENV['RANSACK_FORM_BUILDER'] || '').match('SimpleForm')
 
@@ -91,6 +91,7 @@ module Ransack
         args << {} unless args.last.is_a?(Hash)
         args.last[:builder] ||= options[:builder]
         args.last[:parent_builder] = self
+        except = args.last.delete(:except) || []
         options = args.extract_options!
         objects = args.shift
         objects ||= @object.send(name)
@@ -98,9 +99,11 @@ module Ransack
         name = "#{options[:object_name] || object_name}[#{name}]"
         output = ActiveSupport::SafeBuffer.new
         objects.each do |child|
-          output << @template.fields_for("#{name}[#{
+          unless child.respond_to?(:attributes) && child.attributes.any?{|a| except.include?(a.attr_name)}
+            output << @template.fields_for("#{name}[#{
             options[:child_index] || nested_child_index(name)
             }]", child, options, &block)
+          end
         end
         output
       end
@@ -205,7 +208,7 @@ module Ransack
         begin
           [Translate.association(base, :context => object.context),
             collection_for_base(action, base)]
-        rescue UntraversableAssociationError => e
+        rescue UntraversableAssociationError
           nil
         end
       end
